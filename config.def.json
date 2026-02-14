@@ -1,0 +1,16 @@
+{
+  "mappings": [
+    {"button": "KEY_1", "description": "Copy",        "keys": ["KEY_LEFTCTRL", "KEY_LEFTSHIFT", "KEY_C"]},
+    {"button": "KEY_2", "description": "Paste",       "keys": ["KEY_LEFTCTRL", "KEY_LEFTSHIFT", "KEY_V"]},
+    {"button": "KEY_3", "description": "Cut",         "keys": ["KEY_LEFTCTRL", "KEY_X"]},
+    {"button": "KEY_4", "description": "Back",        "keys": ["KEY_BACK"]},
+    {"button": "KEY_5", "description": "Forward",     "keys": ["KEY_FORWARD"]},
+    {"button": "KEY_6", "description": "Alt+Tab",     "keys": ["KEY_LEFTALT", "KEY_TAB"]},
+    {"button": "KEY_7", "description": "Undo",        "keys": ["KEY_LEFTCTRL", "KEY_Z"]},
+    {"button": "KEY_8", "description": "Redo",        "keys": ["KEY_LEFTCTRL", "KEY_LEFTSHIFT", "KEY_Z"]},
+    {"button": "KEY_9", "description": "Close tab",   "keys": ["KEY_LEFTCTRL", "KEY_W"]},
+    {"button": "KEY_0", "description": "Close window","keys": ["KEY_LEFTALT", "KEY_F4"]},
+    {"button": "KEY_MINUS", "description": "Vol-",    "keys": ["KEY_VOLUMEDOWN"]},
+    {"button": "KEY_EQUAL", "description": "Vol+",    "keys": ["KEY_VOLUMEUP"]}
+  ]
+}

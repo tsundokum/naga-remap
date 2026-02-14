@@ -1,0 +1,12 @@
+[Unit]
+Description=Razer Naga V2 Side Button Remapper
+After=local-fs.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/naga-remap
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
