@@ -1,31 +1,24 @@
 # naga-remap
 
-Lightweight C daemon that remaps the 12 side buttons on the Razer Naga V2 HyperSpeed mouse to key combos or shell commands on Linux. Zero runtime dependencies, single static binary. Runs as a system service (root) so your user account never needs broad input device access.
+Lightweight Linux daemon that remaps the 12 side buttons on the Razer Naga V2 HyperSpeed to key combos or shell commands.
 
 ## How it works
 
-The Razer Naga V2 HyperSpeed side buttons emit numpad keycodes (`KP1`-`KP9`, `KP0`, `KPMINUS`, `KPPLUS`). This daemon:
+- Reads raw button events from the mouse's side-button input device via the Linux evdev interface
+- Grabs the device exclusively so original keycodes don't leak through
+- Emits remapped key combos via Linux uinput (virtual keyboard device)
+- Works on X11, and should work on Wayland since it operates at the kernel input level
+- Runs as a root system service — no GUI tools needed, no OpenRazer dependency
+- Single C binary, zero runtime dependencies, ~530 lines of code
+- Auto-reconnects when the wireless mouse disconnects/reconnects
 
-1. Finds the mouse's side-button input device via evdev
-2. Grabs it exclusively (original numpad presses won't leak through)
-3. Reads button events and remaps them to configured key combos or shell commands via uinput
-4. Auto-reconnects when the wireless mouse disconnects/reconnects
-
-## Quick start
+## Install
 
 ```bash
-# Build
-make
-
-# Detect your device (needs root for /dev/input access)
-sudo ./naga-remap --detect
-
-# Test with debug output
-sudo ./naga-remap -d -c config.def.json
-
-# Install (builds, installs binary + config + systemd service)
-./install.sh
+make && ./install.sh
 ```
+
+The install script builds the binary, copies it to `/usr/local/bin/`, installs the default config to `/etc/naga-remap/config.json`, sets up a systemd service, and starts it.
 
 ## Configuration
 
@@ -34,46 +27,73 @@ Edit `/etc/naga-remap/config.json`:
 ```json
 {
   "mappings": [
-    {"button": "KEY_KP1", "description": "Copy",     "keys": ["KEY_LEFTCTRL", "KEY_C"]},
-    {"button": "KEY_KP2", "description": "Paste",    "keys": ["KEY_LEFTCTRL", "KEY_V"]},
-    {"button": "KEY_KP7", "description": "Terminal", "command": "gnome-terminal"}
+    {"button": "KEY_1", "description": "Copy",        "keys": ["KEY_LEFTCTRL", "KEY_LEFTSHIFT", "KEY_C"]},
+    {"button": "KEY_2", "description": "Paste",       "keys": ["KEY_LEFTCTRL", "KEY_LEFTSHIFT", "KEY_V"]},
+    {"button": "KEY_3", "description": "Cut",          "keys": ["KEY_LEFTCTRL", "KEY_X"]},
+    {"button": "KEY_0", "description": "Close window", "keys": ["KEY_LEFTALT", "KEY_F4"]},
+    {"button": "KEY_MINUS", "description": "Vol-",     "keys": ["KEY_VOLUMEDOWN"]},
+    {"button": "KEY_7", "description": "Terminal",     "command": "gnome-terminal"}
   ]
 }
 ```
 
 Each mapping has:
-- **button**: The numpad keycode the side button emits
-- **description**: Human-readable label
-- **keys**: Array of keycodes to emit as a combo (modifiers first, target last)
-- **command**: Shell command to run (alternative to keys)
+- **button** — the keycode the side button emits (see grid below)
+- **description** — human-readable label (optional, for your reference)
+- **keys** — array of keycodes to emit as a combo (modifiers first, target last)
+- **command** — shell command to run instead of a key combo
 
-### Side button layout (numpad grid)
+Restart the service after editing: `sudo systemctl restart naga-remap`
+
+### Side button layout
+
+The 12 side buttons emit these keycodes:
 
 ```
- ┌─────┬─────┬─────┐
- │ KP7 │ KP8 │ KP9 │  (top row)
- ├─────┼─────┼─────┤
- │ KP4 │ KP5 │ KP6 │
- ├─────┼─────┼─────┤
- │ KP1 │ KP2 │ KP3 │
- ├─────┼─────┼─────┤
- │ KP0 │KP-  │ KP+ │  (bottom row)
- └─────┴─────┴─────┘
+ ┌───────┬───────┬───────┐
+ │ KEY_7 │ KEY_8 │ KEY_9 │  top row
+ ├───────┼───────┼───────┤
+ │ KEY_4 │ KEY_5 │ KEY_6 │
+ ├───────┼───────┼───────┤
+ │ KEY_1 │ KEY_2 │ KEY_3 │
+ ├───────┼───────┼───────┤
+ │ KEY_0 │ KEY_- │ KEY_= │  bottom row
+ └───────┴───────┴───────┘
 ```
+
+Use `sudo ./naga-remap --detect` then `sudo ./naga-remap -d -c config.def.json` to verify the codes on your device.
 
 ### Available key names
 
-Modifiers: `KEY_LEFTCTRL`, `KEY_RIGHTCTRL`, `KEY_LEFTSHIFT`, `KEY_RIGHTSHIFT`, `KEY_LEFTALT`, `KEY_RIGHTALT`, `KEY_LEFTMETA`, `KEY_RIGHTMETA`
+**Modifiers:** `KEY_LEFTCTRL`, `KEY_RIGHTCTRL`, `KEY_LEFTSHIFT`, `KEY_RIGHTSHIFT`, `KEY_LEFTALT`, `KEY_RIGHTALT`, `KEY_LEFTMETA`, `KEY_RIGHTMETA`
 
-Letters: `KEY_A` through `KEY_Z`
+**Letters:** `KEY_A` through `KEY_Z`
 
-Numbers: `KEY_0` through `KEY_9`
+**Numbers:** `KEY_0` through `KEY_9`
 
-Function keys: `KEY_F1` through `KEY_F12`
+**Function keys:** `KEY_F1` through `KEY_F12`
 
-Navigation: `KEY_ESC`, `KEY_TAB`, `KEY_ENTER`, `KEY_SPACE`, `KEY_BACKSPACE`, `KEY_DELETE`, `KEY_HOME`, `KEY_END`, `KEY_PAGEUP`, `KEY_PAGEDOWN`, `KEY_UP`, `KEY_DOWN`, `KEY_LEFT`, `KEY_RIGHT`
+**Navigation:** `KEY_ESC`, `KEY_TAB`, `KEY_ENTER`, `KEY_SPACE`, `KEY_BACKSPACE`, `KEY_DELETE`, `KEY_INSERT`, `KEY_HOME`, `KEY_END`, `KEY_PAGEUP`, `KEY_PAGEDOWN`, `KEY_UP`, `KEY_DOWN`, `KEY_LEFT`, `KEY_RIGHT`
 
-Media: `KEY_MUTE`, `KEY_VOLUMEDOWN`, `KEY_VOLUMEUP`, `KEY_PLAYPAUSE`, `KEY_NEXTSONG`, `KEY_PREVIOUSSONG`
+**Media:** `KEY_MUTE`, `KEY_VOLUMEDOWN`, `KEY_VOLUMEUP`, `KEY_PLAYPAUSE`, `KEY_NEXTSONG`, `KEY_PREVIOUSSONG`, `KEY_STOPCD`
+
+**Browser:** `KEY_BACK`, `KEY_FORWARD`
+
+**Numpad:** `KEY_KP0`–`KEY_KP9`, `KEY_KPMINUS`, `KEY_KPPLUS`, `KEY_KPDOT`, `KEY_KPENTER`, `KEY_KPSLASH`, `KEY_KPASTERISK`, `KEY_NUMLOCK`
+
+**Punctuation:** `KEY_MINUS`, `KEY_EQUAL`, `KEY_LEFTBRACE`, `KEY_RIGHTBRACE`, `KEY_BACKSLASH`, `KEY_SEMICOLON`, `KEY_APOSTROPHE`, `KEY_GRAVE`, `KEY_COMMA`, `KEY_DOT`, `KEY_SLASH`, `KEY_CAPSLOCK`
+
+**Misc:** `KEY_PRINT`, `KEY_SCROLLLOCK`, `KEY_PAUSE`, `KEY_COMPOSE`
+
+## Service management
+
+```bash
+sudo systemctl status naga-remap     # check status
+sudo systemctl restart naga-remap    # restart after config change
+sudo systemctl stop naga-remap       # stop
+sudo systemctl enable naga-remap     # enable on boot
+sudo journalctl -u naga-remap -f     # follow logs
+```
 
 ## CLI options
 
@@ -84,26 +104,7 @@ Media: `KEY_MUTE`, `KEY_VOLUMEDOWN`, `KEY_VOLUMEUP`, `KEY_PLAYPAUSE`, `KEY_NEXTS
 -h          Show help
 ```
 
-## Manual install
-
-```bash
-make
-sudo make install
-sudo cp config.def.json /etc/naga-remap/config.json
-sudo cp naga-remap.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable --now naga-remap
-```
-
-## Service management
-
-```bash
-sudo systemctl status naga-remap
-sudo systemctl restart naga-remap
-sudo journalctl -u naga-remap -f
-```
-
 ## Requirements
 
 - Linux with evdev/uinput support
-- gcc
+- gcc (build only)

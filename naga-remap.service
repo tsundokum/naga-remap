@@ -8,5 +8,16 @@ ExecStart=/usr/local/bin/naga-remap
 Restart=on-failure
 RestartSec=5
 
+# Hardening
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictNamespaces=yes
+LockPersonality=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+SystemCallArchitectures=native
+
 [Install]
 WantedBy=multi-user.target

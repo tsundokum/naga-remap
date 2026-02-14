@@ -29,7 +29,7 @@ if [ -f "$CONFIG_DIR/config.json" ]; then
     echo "  Config already exists at $CONFIG_DIR/config.json (not overwriting)"
 else
     sudo cp "$SCRIPT_DIR/config.def.json" "$CONFIG_DIR/config.json"
-    sudo chmod 644 "$CONFIG_DIR/config.json"
+    sudo chmod 600 "$CONFIG_DIR/config.json"
     echo "  Default config installed to $CONFIG_DIR/config.json"
 fi
 echo

@@ -1,7 +1,7 @@
 /*
  * naga-remap - Razer Naga V2 HyperSpeed side button remapper
  *
- * Intercepts numpad keycodes from the Naga's side buttons via evdev,
+ * Intercepts keycodes from the Naga's side buttons via evdev,
  * remaps them to key combos or shell commands via uinput.
  * Zero runtime dependencies, single static binary.
  */
@@ -95,7 +95,10 @@ static int parse_config(const char *path, config_t *cfg) {
     }
 
     int n = cJSON_GetArraySize(mappings);
-    if (n > MAX_MAPPINGS) n = MAX_MAPPINGS;
+    if (n > MAX_MAPPINGS) {
+        fprintf(stderr, "Config: too many mappings (%d), using first %d\n", n, MAX_MAPPINGS);
+        n = MAX_MAPPINGS;
+    }
 
     for (int i = 0; i < n; i++) {
         cJSON *item = cJSON_GetArrayItem(mappings, i);
@@ -122,7 +125,11 @@ static int parse_config(const char *path, config_t *cfg) {
             snprintf(m->command, MAX_CMD_LEN, "%s", cmd->valuestring);
         } else if (cJSON_IsArray(keys)) {
             int nk = cJSON_GetArraySize(keys);
-            if (nk > MAX_KEYS) nk = MAX_KEYS;
+            if (nk > MAX_KEYS) {
+                fprintf(stderr, "Config: too many keys in mapping '%s' (%d), using first %d\n",
+                        m->description, nk, MAX_KEYS);
+                nk = MAX_KEYS;
+            }
             for (int k = 0; k < nk; k++) {
                 cJSON *key = cJSON_GetArrayItem(keys, k);
                 if (!cJSON_IsString(key)) continue;
@@ -266,9 +273,13 @@ static int setup_uinput(void) {
         return -1;
     }
 
-    ioctl(fd, UI_SET_EVBIT, EV_KEY);
-    ioctl(fd, UI_SET_EVBIT, EV_SYN);
-    ioctl(fd, UI_SET_EVBIT, EV_REP);
+    if (ioctl(fd, UI_SET_EVBIT, EV_KEY) < 0 ||
+        ioctl(fd, UI_SET_EVBIT, EV_SYN) < 0 ||
+        ioctl(fd, UI_SET_EVBIT, EV_REP) < 0) {
+        perror("UI_SET_EVBIT");
+        close(fd);
+        return -1;
+    }
 
     /* Register all keys from our lookup table so X11/libinput
        recognizes this as a proper keyboard device */
@@ -509,7 +520,8 @@ int main(int argc, char *argv[]) {
         g_evdev_fd = find_device();
         if (g_evdev_fd < 0) {
             fprintf(stderr, "Device not found, retrying in %ds...\n", RECONNECT_SEC);
-            sleep(RECONNECT_SEC);
+            for (int i = 0; i < RECONNECT_SEC && g_running; i++)
+                sleep(1);
             continue;
         }
 
@@ -520,7 +532,8 @@ int main(int argc, char *argv[]) {
 
         if (g_running) {
             fprintf(stderr, "Device disconnected, retrying in %ds...\n", RECONNECT_SEC);
-            sleep(RECONNECT_SEC);
+            for (int i = 0; i < RECONNECT_SEC && g_running; i++)
+                sleep(1);
         }
     }
 

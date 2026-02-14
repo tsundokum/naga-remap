@@ -5,6 +5,7 @@
 #define CONFIG_H
 
 #include <linux/input-event-codes.h>
+#include <string.h>
 
 #define MAX_KEYS        8
 #define MAX_MAPPINGS    24
@@ -33,7 +34,7 @@ typedef struct {
 } key_entry_t;
 
 static const key_entry_t key_table[] = {
-    /* Numpad keys (Razer Naga side buttons emit these) */
+    /* Numpad keys */
     {"KEY_KP0",        KEY_KP0},
     {"KEY_KP1",        KEY_KP1},
     {"KEY_KP2",        KEY_KP2},

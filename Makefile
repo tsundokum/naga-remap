@@ -1,9 +1,10 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -O2
+CFLAGS = -std=c99 -Wall -Wextra -O2 -D_FORTIFY_SOURCE=2 -fPIE
+LDFLAGS = -pie -Wl,-z,relro,-z,now
 PREFIX = /usr/local
 
 naga-remap: naga-remap.c cJSON.c
-	$(CC) $(CFLAGS) -o $@ $^
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
 
 install: naga-remap
 	install -Dm755 naga-remap $(DESTDIR)$(PREFIX)/bin/naga-remap
